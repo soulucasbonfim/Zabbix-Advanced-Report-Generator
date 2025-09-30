@@ -46,6 +46,10 @@ LANGUAGES = {
         'check_updates_menu': "Verificar Atualizações...",
         'about_menu': "Sobre...",
 
+        # Cabeçhalho
+        'app_subtitle': "Uma ferramenta para extrair e analisar dados de SLA do Zabbix.",
+        'app_version_display': "Versão {version}",
+
         # Mensagens de Diálogo e Status
         'about_text': """
             <b>Gerador de Relatórios Avançado do Zabbix</b><br>
@@ -210,6 +214,10 @@ LANGUAGES = {
         'help_menu': "&Help",
         'check_updates_menu': "Check for Updates...",
         'about_menu': "About...",
+
+        # Header
+        'app_subtitle': "A tool to extract and analyze SLA data from Zabbix.",
+        'app_version_display': "Version {version}",
 
         # Dialog Messages & Status
         'about_text': """

@@ -25,7 +25,7 @@ except ImportError as e:
                          "Please ensure that report_logic.py, updater.py, and translations.py are in the same folder.")
     sys.exit(1)
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 
 class ZabbixReportApp(QMainWindow):
@@ -101,7 +101,57 @@ class ZabbixReportApp(QMainWindow):
     def _show_about_dialog(self):
         QMessageBox.about(self, get_string('about_title'), get_string('about_text', version=__version__))
 
+    def _create_header(self):
+        """Cria e retorna o widget do cabeçalho da aplicação."""
+        # Widget principal para o cabeçalho, para podermos estilizá-lo
+        header_widget = QWidget()
+        header_widget.setStyleSheet("""
+            QWidget {
+                background-color: #F0F0F0;
+                border-bottom: 1px solid #C0C0C0;
+            }
+        """)
+
+        # Layout principal do cabeçalho (horizontal)
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(15, 15, 15, 15)  # Espaçamento interno
+
+        # Ícone à esquerda
+        icon_label = QLabel()
+        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+        icon_label.setPixmap(icon.pixmap(64, 64))
+        header_layout.addWidget(icon_label)
+
+        header_layout.addSpacing(15)
+
+        # Layout para os textos (vertical)
+        text_layout = QVBoxLayout()
+
+        # Título
+        title_label = QLabel(f"<b>{get_string('window_title')}</b>")
+        title_label.setStyleSheet("font-size: 20px;")
+        text_layout.addWidget(title_label)
+
+        # Subtítulo
+        subtitle_label = QLabel(get_string('app_subtitle'))
+        subtitle_label.setStyleSheet("color: #555;")
+        text_layout.addWidget(subtitle_label)
+
+        text_layout.addStretch()  # Empurra a versão para baixo
+
+        # Versão
+        version_label = QLabel(get_string('app_version_display', version=__version__))
+        version_label.setStyleSheet("color: #777; font-size: 10px;")
+        text_layout.addWidget(version_label)
+
+        header_layout.addLayout(text_layout)
+        header_layout.addStretch()  # Empurra tudo para a esquerda
+
+        return header_widget
+
     def _init_ui(self):
+        self.main_layout.addWidget(self._create_header())
+
         config_group = QGroupBox(get_string('config_group'))
         form_layout = QFormLayout()
         self.url_input = QLineEdit()
@@ -335,5 +385,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ZabbixReportApp()
     window.show()
-
     sys.exit(app.exec())
