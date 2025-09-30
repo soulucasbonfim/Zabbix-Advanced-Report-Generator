@@ -7,7 +7,9 @@
 Uma aplicação de desktop desenvolvida em Python com PyQt6 para conectar-se à API do Zabbix e gerar relatórios mensais completos em formato Excel. A ferramenta automatiza a coleta de problemas, ações, e calcula análises de SLA, apresentando os dados em planilhas e gráficos detalhados.
 
 [IMAGEM_DA_INTERFACE_PRINCIPAL.png]
-*(Dica: Tire um print da tela principal do programa e adicione aqui para um visual mais profissional)*
+<img width="796" height="728" alt="image" src="https://github.com/user-attachments/assets/14a20165-4fe2-4971-8c40-500cb5f90efc" />
+
+
 
 ## ✨ Recursos
 
