@@ -8,10 +8,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QTimer
 
 from translations import get_string
 
-# !! IMPORTANTE !!
-# Quando estiver pronto, substitua esta URL pela URL real do seu arquivo version.json no GitHub.
-VERSION_URL = "https://raw.githubusercontent.com/bla/YOUR_REPOSITORY/main/version.json"
-
+VERSION_URL = "https://raw.githubusercontent.com/soulucasbonfim/Zabbix-Advanced-Report-Generator/main/version.json"
 
 class Updater(QObject):
     check_finished = pyqtSignal(bool, dict)  # is_update_available, update_info
