@@ -25,7 +25,7 @@ except ImportError as e:
                          "Please ensure that report_logic.py, updater.py, and translations.py are in the same folder.")
     sys.exit(1)
 
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 
 
 class ZabbixReportApp(QMainWindow):
@@ -408,4 +408,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ZabbixReportApp()
     window.show()
+
     sys.exit(app.exec())
