@@ -53,7 +53,7 @@ class Updater(QObject):
             base_name = os.path.basename(current_exe)
             new_exe_path = os.path.join(current_path, f"new_{base_name}")
 
-            with requests.get(download_url, stream=True, timeout=300) as r:
+            with requests.get(download_url, stream=True, timeout=300, verify=False) as r:
                 r.raise_for_status()
                 total_size = int(r.headers.get('content-length', 0))
                 downloaded_size = 0
@@ -100,4 +100,5 @@ class Updater(QObject):
 {get_string('UPDATER_SCRIPT_DELETE_SELF')}
 """
         with open(script_path, "w", encoding='utf-8') as f:
+
             f.write(script_content)
