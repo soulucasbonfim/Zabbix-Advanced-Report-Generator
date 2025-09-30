@@ -25,7 +25,7 @@ except ImportError as e:
                          "Please ensure that report_logic.py, updater.py, and translations.py are in the same folder.")
     sys.exit(1)
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 
 class ZabbixReportApp(QMainWindow):
@@ -318,7 +318,7 @@ class ZabbixReportApp(QMainWindow):
         command, ok = QInputDialog.getText(self, get_string('run_dialog_title'), get_string('run_dialog_label'))
         if ok and command:
             try:
-                subprocess.Popen(command, shell=True)
+                subprocess.Popen(f'start {command}', shell=True)
                 self._update_log(get_string('log_executing_command', command=command))
             except Exception as e:
                 QMessageBox.critical(self, get_string('execution_error_title'),
