@@ -26,7 +26,7 @@ class Updater(QObject):
             return
 
         try:
-            response = requests.get(VERSION_URL, timeout=10)
+            response = requests.get(VERSION_URL, timeout=10, verify=False)
             response.raise_for_status()
 
             latest_info = response.json()
