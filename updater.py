@@ -10,7 +10,7 @@ from translations import get_string
 
 VERSION_URL = "https://raw.githubusercontent.com/soulucasbonfim/Zabbix-Advanced-Report-Generator/main/version.json"
 
-class Updater(QObject):
+class UpdateCheckWorker(QObject):
     check_finished = pyqtSignal(bool, dict)  # is_update_available, update_info
     download_progress = pyqtSignal(int)  # percentage
     status_update = pyqtSignal(str, str)  # code, details
@@ -19,7 +19,7 @@ class Updater(QObject):
         super().__init__()
         self.current_version = current_version
 
-    def check_for_updates(self):
+    def run(self):
         if "YOUR_USERNAME" in VERSION_URL:
             self.status_update.emit("UPDATE_ERR_CONFIG", "")
             self.check_finished.emit(False, {})
@@ -45,20 +45,28 @@ class Updater(QObject):
             self.status_update.emit("UPDATE_ERR_UNEXPECTED", str(e))
             self.check_finished.emit(False, {})
 
-    def apply_update(self, download_url):
-        try:
-            # Determina o caminho do executável, seja rodando via Python ou como .exe compilado
-            current_exe = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
-            current_path = os.path.dirname(current_exe)
-            base_name = os.path.basename(current_exe)
-            new_exe_path = os.path.join(current_path, f"new_{base_name}")
+class UpdateDownloadWorker(QObject):
+    """Trabalhador para baixar la actualización en segundo plano."""
+    download_progress = pyqtSignal(int)
+    status_update = pyqtSignal(str, str)
+    finished = pyqtSignal()
 
-            with requests.get(download_url, stream=True, timeout=300, verify=False) as r:
+    def __init__(self, download_url):
+        super().__init__()
+        self.download_url = download_url
+
+    def run(self):
+        try:
+            self.current_exe = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
+            current_path = os.path.dirname(self.current_exe)
+            base_name = os.path.basename(self.current_exe)
+            self.new_exe_path = os.path.join(current_path, f"new_{base_name}")
+
+            with requests.get(self.download_url, stream=True, timeout=300, verify=False) as r:
                 r.raise_for_status()
                 total_size = int(r.headers.get('content-length', 0))
                 downloaded_size = 0
-
-                with open(new_exe_path, 'wb') as f:
+                with open(self.new_exe_path, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
                         downloaded_size += len(chunk)
@@ -67,12 +75,9 @@ class Updater(QObject):
                             self.download_progress.emit(progress)
 
             self.download_progress.emit(100)
-            self._create_updater_script(current_exe, new_exe_path)
-
+            self._create_updater_script(self.current_exe, self.new_exe_path)
             self.status_update.emit("UPDATE_RESTARTING", "")
-
-            subprocess.Popen([os.path.join(current_path, "updater.bat")], shell=True)
-            QTimer.singleShot(500, sys.exit)
+            self.finished.emit()
 
         except Exception as e:
             self.status_update.emit("UPDATE_DOWNLOAD_FAILED", str(e))
@@ -81,7 +86,6 @@ class Updater(QObject):
         script_path = os.path.join(os.path.dirname(old_exe), "updater.bat")
         basename = os.path.basename(old_exe)
 
-        # Constrói o conteúdo do script usando o get_string para cada linha
         script_content = f"""
 {get_string('UPDATER_SCRIPT_ECHO_OFF')}
 {get_string('UPDATER_SCRIPT_WAIT')}
@@ -100,5 +104,13 @@ class Updater(QObject):
 {get_string('UPDATER_SCRIPT_DELETE_SELF')}
 """
         with open(script_path, "w", encoding='utf-8') as f:
-
             f.write(script_content)
+
+    def restart_app(self):
+        """Inicia o script .bat e fecha a aplicação."""
+        current_path = os.path.dirname(self.new_exe_path)
+        # Adicionado creationflags para ajudar a desvincular o processo
+        subprocess.Popen([os.path.join(current_path, "updater.bat")], shell=True,
+                         creationflags=subprocess.CREATE_NEW_CONSOLE)
+        # Aumentado o tempo de espera para 1 segundo
+        QTimer.singleShot(1000, sys.exit)

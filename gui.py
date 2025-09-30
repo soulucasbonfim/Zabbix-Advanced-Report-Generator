@@ -16,7 +16,7 @@ from PyQt6.QtGui import QAction
 
 try:
     from report_logic import SEVERITY_MAP, ReportGenerator
-    from updater import Updater
+    from updater import UpdateCheckWorker, UpdateDownloadWorker
     from translations import get_string
 except ImportError as e:
     # Esta é a única mensagem que não pode usar get_string, pois a importação falhou
@@ -25,7 +25,7 @@ except ImportError as e:
                          "Please ensure that report_logic.py, updater.py, and translations.py are in the same folder.")
     sys.exit(1)
 
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 
 
 class ZabbixReportApp(QMainWindow):
@@ -319,20 +319,25 @@ class ZabbixReportApp(QMainWindow):
         self.report_worker = None
 
     def _check_for_updates(self):
-        if self.update_thread and self.update_thread.isRunning(): return
+        if hasattr(self, 'update_check_thread') and self.update_check_thread.isRunning(): return
         self._update_log(get_string('log_checking_updates'))
-        self.update_thread = QThread()
-        self.update_worker = Updater(current_version=__version__)
-        self.update_worker.moveToThread(self.update_thread)
-        self.update_thread.started.connect(self.update_worker.check_for_updates)
-        self.update_worker.check_finished.connect(self._on_update_check_finished)
-        self.update_worker.status_update.connect(self._on_update_status)
-        self.update_thread.finished.connect(self.update_thread.deleteLater)
-        self.update_worker.check_finished.connect(self.update_worker.deleteLater)
-        self.update_thread.start()
+
+        self.update_check_thread = QThread()
+        self.update_check_worker = UpdateCheckWorker(current_version=__version__)
+        self.update_check_worker.moveToThread(self.update_check_thread)
+
+        self.update_check_thread.started.connect(self.update_check_worker.run)
+        self.update_check_worker.check_finished.connect(self._on_update_check_finished)
+        self.update_check_worker.status_update.connect(self._on_update_status)
+
+        self.update_check_worker.check_finished.connect(self.update_check_thread.quit)
+        self.update_check_thread.finished.connect(self.update_check_thread.deleteLater)
+        self.update_check_worker.check_finished.connect(self.update_check_worker.deleteLater)
+
+        self.update_check_thread.start()
 
     def _on_update_check_finished(self, is_available, info):
-        self.update_thread.quit()
+        self.update_check_thread.quit()
         if is_available:
             self.update_info = info
             msg_box = QMessageBox(self)
@@ -346,14 +351,28 @@ class ZabbixReportApp(QMainWindow):
             if msg_box.exec() == QMessageBox.StandardButton.Yes: self._start_update_download()
 
     def _start_update_download(self):
+        if hasattr(self, 'update_download_thread') and self.update_download_thread.isRunning(): return
+
         self.generate_btn.setEnabled(False)
         self.generate_btn.setText(get_string('updating_button'))
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
-        self.update_worker = Updater(current_version=__version__)
-        self.update_worker.download_progress.connect(self.progress_bar.setValue)
-        self.update_worker.status_update.connect(self._on_update_status)
-        self.update_worker.apply_update(self.update_info.get("download_url"))
+
+        self.update_download_thread = QThread()
+        self.update_download_worker = UpdateDownloadWorker(download_url=self.update_info.get("download_url"))
+        self.update_download_worker.moveToThread(self.update_download_thread)
+
+        self.update_download_thread.started.connect(self.update_download_worker.run)
+        self.update_download_worker.download_progress.connect(self.progress_bar.setValue)
+        self.update_download_worker.status_update.connect(self._on_update_status)
+        self.update_download_worker.finished.connect(self._on_download_finished)
+
+        # Limpeza
+        self.update_download_worker.finished.connect(self.update_download_thread.quit)
+        self.update_download_thread.finished.connect(self.update_download_thread.deleteLater)
+        self.update_download_worker.finished.connect(self.update_download_worker.deleteLater)
+
+        self.update_download_thread.start()
 
     def _on_update_status(self, code, details):
         message = get_string(code, details=details)
@@ -374,6 +393,10 @@ class ZabbixReportApp(QMainWindow):
                 QMessageBox.critical(self, get_string('execution_error_title'),
                                      get_string('execution_error_message', error=e))
 
+    def _on_download_finished(self):
+        """Chamado quando o download termina com sucesso."""
+        if hasattr(self, 'update_download_worker'):
+            self.update_download_worker.restart_app()
 
 if __name__ == "__main__":
     # Define o locale para o padrão do sistema para obter nomes de meses corretos, etc.
