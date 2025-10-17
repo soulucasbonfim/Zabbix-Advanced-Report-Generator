@@ -60,6 +60,7 @@ O sistema de atualização automática busca o arquivo de configuração no segu
 
 ```python
 VERSION_URL = "[https://raw.githubusercontent.com/soulucasbonfim/Zabbix-Advanced-Report-Generator/main/version.json](https://raw.githubusercontent.com/soulucasbonfim/Zabbix-Advanced-Report-Generator/main/version.json)"
+```
 
 ## 👨‍💻 Desenvolvido por
 
